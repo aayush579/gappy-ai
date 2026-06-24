@@ -1,0 +1,109 @@
+{
+  "description": "Automated PR Review & Human Release Approval Workflow",
+  "edges": [
+    {
+      "id": "e1",
+      "label": null,
+      "source": "run_pr_review",
+      "target": "human_approval"
+    },
+    {
+      "id": "e2",
+      "label": null,
+      "source": "human_approval",
+      "target": "routing_decision"
+    },
+    {
+      "id": "e3",
+      "label": null,
+      "source": "generate_release_notes",
+      "target": "release_ready"
+    }
+  ],
+  "icon_url": null,
+  "mode": "GLOBAL",
+  "name": "pr_review_workflow",
+  "nodes": [
+    {
+      "config": {
+        "agent_name": "pr_reviewer_agent",
+        "input_mapping": {}
+      },
+      "id": "run_pr_review",
+      "label": "AI PR Review",
+      "position": null,
+      "type": "AGENT"
+    },
+    {
+      "config": {
+        "assignee_pod_member_id": null,
+        "assignee_pod_member_id_expression": null,
+        "input_schema": {
+          "properties": {
+            "approved": {
+              "title": "Approve Release Readiness?",
+              "type": "boolean"
+            },
+            "rejection_notes": {
+              "title": "Notes / Rejection Reasons",
+              "type": "string"
+            }
+          },
+          "required": [
+            "approved"
+          ],
+          "type": "object"
+        },
+        "ui_schema": null
+      },
+      "id": "human_approval",
+      "label": "Human Approval Gate",
+      "position": null,
+      "type": "FORM"
+    },
+    {
+      "config": {
+        "rules": [
+          {
+            "condition": "human_approval.approved == true",
+            "next_node_id": "generate_release_notes"
+          },
+          {
+            "condition": "human_approval.approved == false",
+            "next_node_id": "changes_requested"
+          }
+        ]
+      },
+      "id": "routing_decision",
+      "label": "Routing Logic",
+      "position": null,
+      "type": "DECISION"
+    },
+    {
+      "config": {
+        "agent_name": "pr_reviewer_agent",
+        "input_mapping": {}
+      },
+      "id": "generate_release_notes",
+      "label": "Generate Release Notes",
+      "position": null,
+      "type": "AGENT"
+    },
+    {
+      "config": {},
+      "id": "release_ready",
+      "label": "PR Approved",
+      "position": null,
+      "type": "END"
+    },
+    {
+      "config": {},
+      "id": "changes_requested",
+      "label": "Changes Requested",
+      "position": null,
+      "type": "END"
+    }
+  ],
+  "start": null,
+  "visibility": "POD"
+}
