@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Coverage reports
+.coverage
+.coverage.*
+coverage.xml
+coverage-*.xml
+htmlcov/
+coverage/
+lcov.info
+*.lcov
+
+# Python bytecode
+__pycache__/
+*.py[cod]

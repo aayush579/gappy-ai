@@ -1,0 +1,55 @@
+services:
+  db:
+    # pg15 to stay data-compatible with existing volumes; 0.8.3 carries the
+    # CVE-2026-3172 (parallel HNSW build) fix and is needed for halfvec indexes.
+    image: docker.io/pgvector/pgvector:0.8.3-pg15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lemma
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      # Host ports are stack-driven (set by scripts/devstack) so the OSS and
+      # cloud dev stacks publish different ports and run side by side; default to
+      # standard ports for a plain `docker compose up`.
+      - "${DEV_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./installer/postgres-init:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: docker.io/redis/redis-stack:7.2.0-v19
+    restart: unless-stopped
+    ports:
+      - "${DEV_REDIS_PORT:-6379}:6379"
+      - "${DEV_REDIS_UI_PORT:-8001}:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  supertokens:
+    image: docker.io/supertokens/supertokens-postgresql:11.1.0
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${DEV_SUPERTOKENS_PORT:-3567}:3567"
+    environment:
+      POSTGRESQL_CONNECTION_URI: postgresql://postgres:postgres@db:5432/supertokens
+    restart: unless-stopped
+    healthcheck:
+      test: >
+        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep "Hello"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+
+volumes:
+  postgres_data:
+  kreuzberg_cache:
